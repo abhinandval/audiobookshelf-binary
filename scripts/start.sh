@@ -16,13 +16,14 @@ HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
 export NUSQLITE3_DIR="${NUSQLITE3_DIR:-${HERE}/lib}"
 export NUSQLITE3_PATH="${NUSQLITE3_PATH:-${HERE}/lib/libnusqlite3.so}"
 
-# Runtime configuration. Defaults keep all data next to the binary so the
-# install is self-contained and behaves the same regardless of the directory
-# you launch it from. Point CONFIG_PATH/METADATA_PATH elsewhere for a
-# persistent location that survives replacing the binary on upgrade.
+# Runtime configuration. Data lives under ~/.audiobookshelf by default so it
+# survives replacing the binary on upgrade. Override ABS_HOME, or the
+# individual paths, or pass --config/--metadata. Falls back to next-to-binary
+# when HOME is unset.
 export PORT="${PORT:-3333}"
-export CONFIG_PATH="${CONFIG_PATH:-${HERE}/config}"
-export METADATA_PATH="${METADATA_PATH:-${HERE}/metadata}"
+ABS_HOME="${ABS_HOME:-${HOME:-$HERE}/.audiobookshelf}"
+export CONFIG_PATH="${CONFIG_PATH:-${ABS_HOME}/config}"
+export METADATA_PATH="${METADATA_PATH:-${ABS_HOME}/metadata}"
 # HOST is intentionally not defaulted: leaving it unset lets audiobookshelf
 # bind all interfaces dual-stack (IPv4 + IPv6). Export HOST=127.0.0.1 yourself
 # to expose only locally (e.g. behind a reverse proxy).
