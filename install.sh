@@ -183,7 +183,18 @@ do_install() {
     mkdir -p "$BIN_DIR" "$(dirname "$INSTALL_DIR")" "${ABS_HOME}/config" "${ABS_HOME}/metadata"
     rm -rf "$INSTALL_DIR"
     mv "$extracted" "$INSTALL_DIR"
-    ln -sf "${INSTALL_DIR}/start.sh" "${BIN_DIR}/audiobookshelf"
+
+    # Launcher on PATH. Calls the bundle's start.sh by absolute path (no symlink
+    # in the chain, so start.sh resolves its own dir correctly on every release)
+    # and pins data to ABS_HOME regardless of the bundled start.sh's defaults.
+    cat > "${BIN_DIR}/audiobookshelf" << EOF
+#!/bin/sh
+: "\${CONFIG_PATH:=${ABS_HOME}/config}"
+: "\${METADATA_PATH:=${ABS_HOME}/metadata}"
+export CONFIG_PATH METADATA_PATH
+exec "${INSTALL_DIR}/start.sh" "\$@"
+EOF
+    chmod +x "${BIN_DIR}/audiobookshelf"
     info "Installed to ${INSTALL_DIR}"
 }
 
