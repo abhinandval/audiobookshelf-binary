@@ -85,6 +85,33 @@ jobs:
           grep -qi "Running in production" "$dir/server.log" \
             || { echo "Server did not reach 'Running in production' — see log above"; exit 1; }
 
+      - name: Set up node tooling
+        uses: jdx/mise-action@v2
+
+      - name: Install E2E deps
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: E2E test (loads, create root, sign in)
+        env:
+          ABS_VERSION: ${{ steps.resolve.outputs.abs_version }}
+        run: |
+          set -euo pipefail
+          export ABS_BUNDLE_DIR="$GITHUB_WORKSPACE/smoke/audiobookshelf-${ABS_VERSION}-linux-arm64"
+          test -x "$ABS_BUNDLE_DIR/start.sh" || { echo "bundle not found at $ABS_BUNDLE_DIR"; exit 1; }
+          npx playwright test
+
+      - name: Upload E2E screenshots and report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-screenshots-${{ steps.resolve.outputs.abs_version }}-linux-arm64
+          path: |
+            screenshots/
+            playwright-report/
+          if-no-files-found: warn
+
       - name: Generate SLSA build provenance
         uses: actions/attest-build-provenance@v4
         with:

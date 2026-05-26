@@ -6,9 +6,11 @@
   "license": "GPL-3.0",
   "scripts": {
     "prepare": "husky",
-    "lint": "mise run lint"
+    "lint": "mise run lint",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "1.60.0",
     "husky": "^9.1.7",
     "prettier": "3.4.2"
   }
