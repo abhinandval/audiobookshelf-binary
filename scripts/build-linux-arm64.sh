@@ -37,12 +37,12 @@ apt-get update -qq
 apt-get install -y --no-install-recommends \
     ca-certificates curl unzip git jq xz-utils \
     build-essential python3 \
-    >/dev/null
+    > /dev/null
 
 log "Installing Node.js ${NODE_VERSION} (arm64)"
 NODE_DIST="node-v${NODE_VERSION}.20.0-linux-arm64"
-curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}.20.0/${NODE_DIST}.tar.xz" \
-    | tar -xJ -C /usr/local --strip-components=1
+curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}.20.0/${NODE_DIST}.tar.xz" |
+    tar -xJ -C /usr/local --strip-components=1
 node --version
 npm --version
 
@@ -89,11 +89,11 @@ mkdir -p "${STAGE_DIR}/lib"
 cp "${ABS_SRC}/dist/audiobookshelf" "${STAGE_DIR}/audiobookshelf"
 cp "${NUSQLITE3_DIR}"/*.so "${STAGE_DIR}/lib/"
 cp "${ABS_SRC}/LICENSE" "${STAGE_DIR}/LICENSE.audiobookshelf"
-cp "$(dirname "$0")/../README.md" "${STAGE_DIR}/README.md" 2>/dev/null || true
+cp "$(dirname "$0")/../README.md" "${STAGE_DIR}/README.md" 2> /dev/null || true
 cp "$(dirname "$0")/start.sh" "${STAGE_DIR}/start.sh"
 chmod +x "${STAGE_DIR}/audiobookshelf" "${STAGE_DIR}/start.sh"
 
-cat > "${STAGE_DIR}/BUILD_INFO.txt" <<EOF
+cat > "${STAGE_DIR}/BUILD_INFO.txt" << EOF
 audiobookshelf binary build
 ---------------------------
 Upstream version: ${ABS_VERSION}
@@ -108,7 +108,7 @@ log "Creating tarball + checksum"
 mkdir -p "${OUT_DIR}"
 TARBALL="${OUT_DIR}/${ARCHIVE_NAME}.tar.gz"
 tar -C "${WORK_DIR}" -czf "${TARBALL}" "${ARCHIVE_NAME}"
-( cd "${OUT_DIR}" && sha256sum "${ARCHIVE_NAME}.tar.gz" > "${ARCHIVE_NAME}.tar.gz.sha256" )
+(cd "${OUT_DIR}" && sha256sum "${ARCHIVE_NAME}.tar.gz" > "${ARCHIVE_NAME}.tar.gz.sha256")
 
 log "Done."
 ls -lh "${OUT_DIR}"

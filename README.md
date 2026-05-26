@@ -10,14 +10,14 @@ Audiobookshelf publishes Docker images for `linux/amd64` and `linux/arm64`, but 
 
 ## Supported targets
 
-| OS | Architecture | Status |
-|---|---|---|
-| Linux (glibc) | arm64 | PoC |
-| Linux (glibc) | amd64 | Planned |
-| Windows | amd64 | Planned |
-| Windows | arm64 | Planned |
-| macOS | arm64 (Apple Silicon) | Planned |
-| macOS | amd64 (Intel) | Planned |
+| OS            | Architecture          | Status  |
+| ------------- | --------------------- | ------- |
+| Linux (glibc) | arm64                 | PoC     |
+| Linux (glibc) | amd64                 | Planned |
+| Windows       | amd64                 | Planned |
+| Windows       | arm64                 | Planned |
+| macOS         | arm64 (Apple Silicon) | Planned |
+| macOS         | amd64 (Intel)         | Planned |
 
 Minimum glibc: **2.31** (Debian Bullseye / Raspberry Pi OS Bullseye / Ubuntu 20.04 and newer).
 

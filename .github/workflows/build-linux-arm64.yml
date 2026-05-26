@@ -76,7 +76,10 @@ jobs:
           file "$dir/audiobookshelf"
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg >/dev/null
-          ( cd "$dir" && timeout 15 ./start.sh >server.log 2>&1 || true )
+          (
+            cd "$dir"
+            timeout 15 ./start.sh >server.log 2>&1 || true
+          )
           echo "--- server.log ---"
           cat "$dir/server.log" || true
           grep -qi "Running in production" "$dir/server.log" \
