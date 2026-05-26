@@ -1,0 +1,15 @@
+{
+  "name": "audiobookshelf-binary-tooling",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Dev tooling (git hooks + formatting) for the audiobookshelf-binary build pipeline. Not published.",
+  "license": "GPL-3.0",
+  "scripts": {
+    "prepare": "husky",
+    "lint": "mise run lint"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "prettier": "3.4.2"
+  }
+}
