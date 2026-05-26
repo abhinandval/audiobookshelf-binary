@@ -23,24 +23,43 @@ Minimum glibc: **2.31** (Debian Bullseye / Raspberry Pi OS Bullseye / Ubuntu 20.
 
 ## Prerequisites
 
-- **ffmpeg** must be installed and on `PATH`. The binary does not bundle it.
+- **ffmpeg (>= 5.1)** must be installed and on `PATH`. The binary does not bundle it. `start.sh` checks the version and refuses to start on anything older, since audiobookshelf would otherwise try to download its own ffmpeg (which can fail on Android / uncommon arm targets).
   - Debian/Ubuntu/Raspberry Pi OS: `sudo apt install ffmpeg`
   - Fedora: `sudo dnf install ffmpeg`
   - macOS: `brew install ffmpeg`
   - Windows: `winget install Gyan.FFmpeg`
+  - If your distro ships an older ffmpeg, install a newer build and run with `FFMPEG_PATH=/path/to/ffmpeg FFPROBE_PATH=/path/to/ffprobe SKIP_BINARIES_CHECK=1 ./start.sh`.
 
 ## Install (linux-arm64)
 
 ```sh
 # Replace VERSION with the latest from Releases
 VERSION=v2.35.0
-curl -LO "https://github.com/<your-org>/audiobookshelf-binary/releases/download/${VERSION}/audiobookshelf-${VERSION}-linux-arm64.tar.gz"
+curl -LO "https://github.com/abhinandval/audiobookshelf-binary/releases/download/${VERSION}/audiobookshelf-${VERSION}-linux-arm64.tar.gz"
 tar -xzf "audiobookshelf-${VERSION}-linux-arm64.tar.gz"
 cd "audiobookshelf-${VERSION}-linux-arm64"
-./audiobookshelf
+./start.sh
 ```
 
-Audiobookshelf will start on port `3333` by default. Set `PORT`, `CONFIG_PATH`, `METADATA_PATH` env vars as documented upstream.
+Always launch via `./start.sh` (not the bare `audiobookshelf` binary) — the launcher wires up the bundled SQLite extension, checks for ffmpeg, and applies the defaults below.
+
+### Defaults and overrides
+
+| Variable        | Default                  | Notes                      |
+| --------------- | ------------------------ | -------------------------- |
+| `PORT`          | `3333`                   | HTTP port                  |
+| `CONFIG_PATH`   | `<install dir>/config`   | Database and server config |
+| `METADATA_PATH` | `<install dir>/metadata` | Covers, cached metadata    |
+
+`HOST` is left unset so the server binds all interfaces dual-stack (IPv4 + IPv6). Set `HOST=127.0.0.1` to expose only locally (e.g. behind a reverse proxy).
+
+By default all data lives next to the binary, so the install is self-contained. To keep your data when upgrading (replacing the binary), point these at a stable location:
+
+```sh
+CONFIG_PATH=~/.audiobookshelf/config METADATA_PATH=~/.audiobookshelf/metadata PORT=8000 ./start.sh
+```
+
+CLI flags also work and take precedence: `./start.sh --port 8000 --config ~/abs/config --metadata ~/abs/metadata`.
 
 ## Verifying downloads
 
