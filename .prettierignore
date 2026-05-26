@@ -2,5 +2,7 @@ LICENSE
 dist/
 build-cache/
 upstream/
+node_modules/
+package-lock.json
 *.tar.gz
 *.zip

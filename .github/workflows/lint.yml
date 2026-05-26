@@ -14,12 +14,13 @@ permissions:
   contents: read
 
 jobs:
-  pre-commit:
+  lint:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - uses: pre-commit/action@v3.0.1
+      - uses: jdx/mise-action@v2
+      - name: Install npm tooling (prettier)
+        run: npm ci
+      - name: Run lint task
+        run: mise run lint

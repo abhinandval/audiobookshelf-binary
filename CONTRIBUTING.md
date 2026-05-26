@@ -19,19 +19,31 @@ Thanks for your interest. This project packages [audiobookshelf](https://github.
 You need:
 
 - `git`, a recent Bash (4+)
-- `pre-commit` (optional but recommended): `pip install pre-commit && pre-commit install`
+- [`mise`](https://mise.jdx.dev) — provides node + shellcheck + shfmt + actionlint at pinned versions
 - Docker if you want to run a build locally (the build runs in a `debian:bullseye-slim` arm64 container).
+
+One-time setup:
+
+```sh
+mise trust            # trust .mise.toml in this repo
+mise install          # install pinned node, shellcheck, shfmt, actionlint
+npm install           # installs prettier + activates the husky git hooks
+```
+
+`npm install` runs husky's `prepare` script, which installs a **`pre-push`** hook. From then on, the lint task runs automatically before every push and blocks the push if anything fails.
 
 ## Running checks locally
 
 ```sh
-pre-commit run --all-files          # everything
-pre-commit run shellcheck --all-files
-pre-commit run actionlint --all-files
-pre-commit run prettier --all-files
+mise run lint         # everything CI runs: shellcheck, shfmt, actionlint, prettier
+mise run fmt          # auto-fix formatting (shfmt -w + prettier --write)
 ```
 
-CI runs the same checks. If they pass locally, they should pass in CI.
+CI installs the **same tool versions** (via `.mise.toml`) and runs the same `mise run lint`, so "passes locally" means "passes in CI" — no version drift.
+
+### If the pre-push hook doesn't run
+
+Hooks need `mise` on `PATH`. GUI git clients (VS Code, Tower, GitHub Desktop) often don't load your shell `PATH`. The hook adds `~/.local/bin` and `~/.local/share/mise/shims` itself, but if `mise` lives elsewhere, ensure it's on `PATH` for your git client. Verify the hook is active with `git config --get core.hooksPath` (should print `.husky/_`).
 
 ## Testing a build locally (linux-arm64)
 

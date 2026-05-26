@@ -1,0 +1,27 @@
+# Single source of truth for dev tooling. Both the local husky pre-push hook
+# and CI install these exact versions, so "passes locally" == "passes in CI".
+#
+# Setup:  mise install && npm install
+# Run:    mise run lint
+
+[tools]
+node = "22"
+shellcheck = "0.11.0"
+shfmt = "3.13.1"
+actionlint = "1.7.12"
+
+[tasks.lint]
+description = "Run all lint checks (shellcheck, shfmt, actionlint, prettier)"
+run = [
+  "shellcheck scripts/*.sh",
+  "shfmt -i 4 -ci -sr -d scripts/*.sh",
+  "actionlint",
+  "npx prettier --check .",
+]
+
+[tasks.fmt]
+description = "Auto-fix formatting (shfmt + prettier write)"
+run = [
+  "shfmt -i 4 -ci -sr -w scripts/*.sh",
+  "npx prettier --write .",
+]

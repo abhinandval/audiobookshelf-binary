@@ -1,0 +1,14 @@
+# Run the same lint task CI runs, before allowing a push.
+#
+# mise (and the tools it manages: shellcheck, shfmt, actionlint, node) live
+# under ~/.local. GUI git clients (VS Code, Tower, GitHub Desktop) don't load
+# your interactive shell PATH, so make mise discoverable explicitly — this is
+# the #1 reason hooks "silently don't run" with a version manager.
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+
+if ! command -v mise >/dev/null 2>&1; then
+  echo "pre-push: mise not found. Install it (https://mise.jdx.dev) then run 'mise install && npm install'." >&2
+  exit 1
+fi
+
+exec mise run lint
