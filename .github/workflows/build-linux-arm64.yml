@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout this repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Resolve upstream version
         id: resolve
@@ -78,7 +78,7 @@ jobs:
             || { echo "Server did not reach 'Running in production' — see log above"; exit 1; }
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: audiobookshelf-${{ steps.resolve.outputs.abs_version }}-linux-arm64
           path: |
