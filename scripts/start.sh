@@ -11,7 +11,19 @@ set -euo pipefail
 FFMPEG_MIN_MAJOR=5
 FFMPEG_MIN_MINOR=1
 
-HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+# Resolve this script's real location, following symlinks. The installer
+# symlinks ~/.local/bin/audiobookshelf -> this file, so HERE must point at the
+# extracted bundle (not the symlink's dir) or we'd re-exec ourselves.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+    dir="$(cd -P -- "$(dirname -- "$SOURCE")" &> /dev/null && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    case "$SOURCE" in
+        /*) ;;
+        *) SOURCE="$dir/$SOURCE" ;;
+    esac
+done
+HERE="$(cd -P -- "$(dirname -- "$SOURCE")" &> /dev/null && pwd)"
 
 export NUSQLITE3_DIR="${NUSQLITE3_DIR:-${HERE}/lib}"
 export NUSQLITE3_PATH="${NUSQLITE3_PATH:-${HERE}/lib/libnusqlite3.so}"
