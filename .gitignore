@@ -5,3 +5,8 @@ node_modules/
 *.tar.gz
 *.zip
 .DS_Store
+
+# Playwright
+/test-results/
+/playwright-report/
+/screenshots/
