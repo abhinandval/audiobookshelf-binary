@@ -1,0 +1,7 @@
+dist/
+build-cache/
+upstream/
+node_modules/
+*.tar.gz
+*.zip
+.DS_Store

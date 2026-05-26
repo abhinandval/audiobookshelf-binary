@@ -1,0 +1,72 @@
+# audiobookshelf-binary
+
+Community-built standalone binaries of [audiobookshelf](https://github.com/advplyr/audiobookshelf) for bare-metal self-hosting — no Docker required.
+
+> **Unofficial.** Not affiliated with [advplyr/audiobookshelf](https://github.com/advplyr/audiobookshelf). Built from upstream source via GitHub Actions on every release. Source for the build pipeline lives in this repo; binaries are published to the [Releases page](../../releases).
+
+## Why this exists
+
+Audiobookshelf publishes Docker images for `linux/amd64` and `linux/arm64`, but **no standalone binaries** for bare-metal installs. This project fills that gap for users running on Raspberry Pi, low-power ARM boards, or any host where containers add overhead they don't want.
+
+## Supported targets
+
+| OS | Architecture | Status |
+|---|---|---|
+| Linux (glibc) | arm64 | PoC |
+| Linux (glibc) | amd64 | Planned |
+| Windows | amd64 | Planned |
+| Windows | arm64 | Planned |
+| macOS | arm64 (Apple Silicon) | Planned |
+| macOS | amd64 (Intel) | Planned |
+
+Minimum glibc: **2.31** (Debian Bullseye / Raspberry Pi OS Bullseye / Ubuntu 20.04 and newer).
+
+## Prerequisites
+
+- **ffmpeg** must be installed and on `PATH`. The binary does not bundle it.
+  - Debian/Ubuntu/Raspberry Pi OS: `sudo apt install ffmpeg`
+  - Fedora: `sudo dnf install ffmpeg`
+  - macOS: `brew install ffmpeg`
+  - Windows: `winget install Gyan.FFmpeg`
+
+## Install (linux-arm64)
+
+```sh
+# Replace VERSION with the latest from Releases
+VERSION=v2.35.0
+curl -LO "https://github.com/<your-org>/audiobookshelf-binary/releases/download/${VERSION}/audiobookshelf-${VERSION}-linux-arm64.tar.gz"
+tar -xzf "audiobookshelf-${VERSION}-linux-arm64.tar.gz"
+cd "audiobookshelf-${VERSION}-linux-arm64"
+./audiobookshelf
+```
+
+Audiobookshelf will start on port `3333` by default. Set `PORT`, `CONFIG_PATH`, `METADATA_PATH` env vars as documented upstream.
+
+## Verifying downloads
+
+Each release ships a `SHA256SUMS` file and (planned) cosign signatures.
+
+```sh
+sha256sum -c SHA256SUMS
+```
+
+## How builds work
+
+A GitHub Actions workflow polls upstream releases, then for each new tag:
+
+1. Checks out audiobookshelf source at the tag
+2. Builds the Nuxt client (`client/dist`)
+3. Installs server deps and downloads platform-appropriate `libnusqlite3` from [mikiher/nunicode-sqlite](https://github.com/mikiher/nunicode-sqlite)
+4. Bundles into a single executable using [`@yao-pkg/pkg`](https://github.com/yao-pkg/pkg) (community fork of vercel/pkg)
+5. Archives binary + libs + LICENSE + README, generates checksums, uploads as a release asset
+
+Build logs are public on the [Actions tab](../../actions). Source pinned to upstream tags by SHA.
+
+## License
+
+The build pipeline (this repo) is licensed under **GPL-3.0** to match upstream. Released binaries contain audiobookshelf source code and are likewise GPL-3.0. See [LICENSE](LICENSE) and upstream [audiobookshelf/LICENSE](https://github.com/advplyr/audiobookshelf/blob/master/LICENSE).
+
+## Reporting issues
+
+- **App bugs** (UI, library scanning, metadata, etc.): file upstream at [advplyr/audiobookshelf/issues](https://github.com/advplyr/audiobookshelf/issues)
+- **Packaging bugs** (binary won't start, missing files, wrong glibc, etc.): file here

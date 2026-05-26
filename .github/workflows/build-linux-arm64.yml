@@ -1,0 +1,105 @@
+name: build-linux-arm64
+
+on:
+  workflow_dispatch:
+    inputs:
+      abs_version:
+        description: 'Upstream audiobookshelf tag to build (e.g. v2.35.0). Leave empty for latest release.'
+        required: false
+        type: string
+      publish_release:
+        description: 'Attach the artifact to a GitHub Release with this tag (leave empty to skip)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+
+      - name: Resolve upstream version
+        id: resolve
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_ABS_VERSION: ${{ inputs.abs_version }}
+        run: |
+          set -euo pipefail
+          v="$INPUT_ABS_VERSION"
+          if [ -z "$v" ]; then
+            v="$(gh release view --repo advplyr/audiobookshelf --json tagName --jq .tagName)"
+          fi
+          # Whitelist: only allow vX.Y.Z[-suffix] style tags
+          if ! printf '%s' "$v" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$'; then
+            echo "Refusing untrusted version string: $v" >&2
+            exit 1
+          fi
+          echo "Building audiobookshelf $v"
+          echo "abs_version=$v" >> "$GITHUB_OUTPUT"
+
+      - name: Build inside debian:bullseye-slim (glibc 2.31)
+        env:
+          ABS_VERSION: ${{ steps.resolve.outputs.abs_version }}
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            --platform linux/arm64 \
+            -e ABS_VERSION \
+            -e WORK_DIR=/work/build-cache \
+            -e OUT_DIR=/work/dist \
+            -v "$GITHUB_WORKSPACE:/work" \
+            -w /work \
+            debian:bullseye-slim \
+            bash /work/scripts/build-linux-arm64.sh
+
+      - name: Smoke test — binary starts and reaches production mode
+        env:
+          ABS_VERSION: ${{ steps.resolve.outputs.abs_version }}
+        run: |
+          set -euo pipefail
+          archive="dist/audiobookshelf-${ABS_VERSION}-linux-arm64.tar.gz"
+          test -f "$archive" || { echo "Missing $archive"; exit 1; }
+          mkdir -p smoke && tar -xzf "$archive" -C smoke
+          dir="smoke/audiobookshelf-${ABS_VERSION}-linux-arm64"
+          ls -lh "$dir"
+          file "$dir/audiobookshelf"
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends ffmpeg >/dev/null
+          ( cd "$dir" && timeout 15 ./start.sh >server.log 2>&1 || true )
+          echo "--- server.log ---"
+          cat "$dir/server.log" || true
+          grep -qi "Running in production" "$dir/server.log" \
+            || { echo "Server did not reach 'Running in production' — see log above"; exit 1; }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: audiobookshelf-${{ steps.resolve.outputs.abs_version }}-linux-arm64
+          path: |
+            dist/*.tar.gz
+            dist/*.sha256
+          if-no-files-found: error
+
+      - name: Attach to GitHub Release
+        if: inputs.publish_release != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ABS_VERSION: ${{ steps.resolve.outputs.abs_version }}
+          PUBLISH_TAG: ${{ inputs.publish_release }}
+        run: |
+          set -euo pipefail
+          if ! printf '%s' "$PUBLISH_TAG" | grep -Eq '^[A-Za-z0-9._-]+$'; then
+            echo "Refusing untrusted release tag: $PUBLISH_TAG" >&2
+            exit 1
+          fi
+          gh release view "$PUBLISH_TAG" >/dev/null 2>&1 \
+            || gh release create "$PUBLISH_TAG" \
+                 --title "$PUBLISH_TAG" \
+                 --notes "Community binary builds of audiobookshelf $ABS_VERSION."
+          gh release upload "$PUBLISH_TAG" dist/*.tar.gz dist/*.sha256 --clobber
