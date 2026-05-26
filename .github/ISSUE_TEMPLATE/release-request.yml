@@ -1,0 +1,28 @@
+name: Release request
+description: Ask for a build of a specific upstream audiobookshelf version.
+title: "build: audiobookshelf <version>"
+labels: [release-request]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Upstream version to build
+      placeholder: v2.36.0
+    validations:
+      required: true
+  - type: checkboxes
+    id: targets
+    attributes:
+      label: Targets needed
+      options:
+        - label: linux-arm64
+        - label: linux-amd64
+        - label: windows-amd64
+        - label: windows-arm64
+        - label: macos-amd64
+        - label: macos-arm64
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Anything special about this version? Breaking changes upstream?

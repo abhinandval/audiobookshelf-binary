@@ -1,0 +1,57 @@
+name: Packaging bug
+description: The binary won't start, crashes immediately, or behaves differently from upstream Docker.
+title: "fix: <short description>"
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before filing:** if the bug is in audiobookshelf itself (library scan, UI, metadata, login, etc.),
+        file it at [advplyr/audiobookshelf/issues](https://github.com/advplyr/audiobookshelf/issues).
+        This tracker is only for **packaging** bugs — the binary won't start, missing libraries, glibc errors, etc.
+  - type: input
+    id: release
+    attributes:
+      label: Release version
+      placeholder: v2.35.0
+    validations:
+      required: true
+  - type: dropdown
+    id: target
+    attributes:
+      label: Target
+      options:
+        - linux-arm64
+        - linux-amd64
+        - windows-amd64
+        - windows-arm64
+        - macos-amd64
+        - macos-arm64
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Host OS and version
+      placeholder: "Raspberry Pi OS Bookworm (Debian 12), kernel 6.6.20"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you run and what did you see?
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / error output
+      render: shell

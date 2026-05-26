@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Audiobookshelf app bugs (library scanning, UI, metadata, etc.)
+    url: https://github.com/advplyr/audiobookshelf/issues
+    about: This repo only packages binaries. App bugs belong upstream.
+  - name: Audiobookshelf questions / support
+    url: https://github.com/advplyr/audiobookshelf/discussions
+    about: For setup help and general questions, use upstream discussions.
