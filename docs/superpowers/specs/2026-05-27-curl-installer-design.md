@@ -23,7 +23,7 @@ In scope:
 - SHA256 verification of the downloaded tarball.
 - Install layout: app files in `~/.local/share/audiobookshelf/`, a `~/.local/bin/audiobookshelf` symlink to `start.sh`, config in `~/.audiobookshelf/{config,metadata}`.
 - `start.sh` default change so config/metadata live in `~/.audiobookshelf`.
-- ffmpeg detection with per-environment guidance (advisory, non-blocking).
+- ffmpeg `>= 5.1` preflight gate that fails before any download, mirroring `start.sh`'s runtime guard.
 - Idempotent re-run (in-place upgrade) and an uninstall note.
 - Hosting via GitHub Pages.
 
@@ -71,16 +71,25 @@ export METADATA_PATH="${METADATA_PATH:-${ABS_HOME}/metadata}"
 
 ## Installer flow
 
-1. **Preflight**: ensure `curl` or `wget`, `tar`, `uname`, and a sha256 tool (`sha256sum` or `shasum -a 256`) exist; abort early with a clear message if not.
+1. **Tool preflight**: ensure `curl` or `wget`, `tar`, `uname`, and a sha256 tool (`sha256sum` or `shasum -a 256`) exist; abort early with a clear message if not.
 2. **Detect**: `os=$(uname -s)`, `arch=$(uname -m)`; normalise (`x86_64`→`amd64`, `aarch64`/`arm64`→`arm64`, `Linux`→`linux`, `Darwin`→`macos`).
 3. **Map + gate**: look up `<os>-<arch>` in the supported-target list. If absent → message + exit 1.
-4. **Resolve release**: GET `https://api.github.com/repos/abhinandval/audiobookshelf-binary/releases/latest`; extract the `browser_download_url` for `audiobookshelf-<tag>-<target>.tar.gz` and its `.sha256` using `grep`/`sed` (no `jq`). A `--version <tag>` flag overrides.
-5. **Confirm**: print a summary (version, target, install dir, config dir) and prompt `y/N` read from `/dev/tty`. If no TTY and `--yes` not passed → abort with instructions. `--yes`/`-y` skips the prompt.
-6. **Download + verify**: into a `mktemp -d` workspace; fetch tarball + `.sha256`; verify; abort on mismatch.
-7. **Install**: create dirs; extract bundle into a temp dir then move into place atomically (replace existing on upgrade); create the `~/.local/bin/audiobookshelf` symlink; `mkdir -p ~/.audiobookshelf/{config,metadata}`.
-8. **ffmpeg advisory**: detect ffmpeg + version; if missing or `< 5.1`, print install guidance for the detected environment (apt/dnf/brew/Termux `pkg`). Non-blocking — `start.sh` enforces at runtime.
+4. **ffmpeg gate** (fail before any download — see below): unless `--skip-ffmpeg-check` is passed or `FFMPEG_PATH` is set, require ffmpeg `>= 5.1` on `PATH`. Missing or too old → clear message + install guidance + exit 1, with nothing fetched or written.
+5. **Resolve release**: GET `https://api.github.com/repos/abhinandval/audiobookshelf-binary/releases/latest`; extract the `browser_download_url` for `audiobookshelf-<tag>-<target>.tar.gz` and its `.sha256` using `grep`/`sed` (no `jq`). A `--version <tag>` flag overrides.
+6. **Confirm**: print a summary (version, target, install dir, config dir) and prompt `y/N` read from `/dev/tty`. If no TTY and `--yes` not passed → abort with instructions. `--yes`/`-y` skips the prompt.
+7. **Download + verify**: into a `mktemp -d` workspace; fetch tarball + `.sha256`; verify; abort on mismatch.
+8. **Install**: create dirs; extract bundle into a temp dir then move into place atomically (replace existing on upgrade); create the `~/.local/bin/audiobookshelf` symlink; `mkdir -p ~/.audiobookshelf/{config,metadata}`.
 9. **PATH check**: if `~/.local/bin` is not on `PATH`, print how to add it.
 10. **Done**: print the run command (`audiobookshelf` or the absolute path) and an uninstall hint.
+
+### ffmpeg gate (step 4) — mirrors `start.sh`
+
+The same ffmpeg `>= 5.1` requirement that `start.sh` enforces at launch is also checked here in the installer, **before any network fetch or filesystem change**. This is an intentional re-implementation, not accidental duplication, because the two run in different contexts:
+
+- A user who installs **manually** (downloads the tarball) never runs the installer, so `start.sh` must keep its own guard.
+- A user who uses the **installer** benefits from failing fast — nothing is downloaded or written if ffmpeg is unsuitable.
+
+Behaviour matches `start.sh`: trust a user-set `FFMPEG_PATH` (skip the check); else parse `ffmpeg -version` and abort on a parseable version `< 5.1`; warn-but-continue on unparseable git-build version strings. Implemented in POSIX `sh` (no `[[ ]]`/`BASH_REMATCH`) using `awk`/`sed` parsing and integer `[ ]` comparisons. A `--skip-ffmpeg-check` flag bypasses the gate for users who will supply ffmpeg afterward.
 
 ## Error handling
 
