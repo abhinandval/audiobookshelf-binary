@@ -10,6 +10,7 @@
 #   OUT_DIR           - where the packaged tarball is written (default: ./dist)
 #   NODE_VERSION      - Node major used for pkg target (default: 20)
 #   NUSQLITE3_VERSION - mikiher/nunicode-sqlite tag (default: v1.2)
+#   YAO_PKG_VERSION   - @yao-pkg/pkg npm version (default: 6.19.0)
 #
 # Designed to run inside `debian:bullseye-slim` on a native arm64 host so the
 # resulting binary links against glibc 2.31 (Debian Bullseye / RPi OS Bullseye
@@ -22,6 +23,7 @@ WORK_DIR="${WORK_DIR:-$(pwd)/build-cache}"
 OUT_DIR="${OUT_DIR:-$(pwd)/dist}"
 NODE_VERSION="${NODE_VERSION:-20}"
 NUSQLITE3_VERSION="${NUSQLITE3_VERSION:-v1.2}"
+YAO_PKG_VERSION="${YAO_PKG_VERSION:-6.19.0}"
 
 TARGET_TRIPLE="linux-arm64"
 ARCHIVE_NAME="audiobookshelf-${ABS_VERSION}-${TARGET_TRIPLE}"
@@ -70,8 +72,8 @@ mkdir -p "${NUSQLITE3_DIR}"
 unzip -q "${NUSQLITE3_ZIP}" -d "${NUSQLITE3_DIR}"
 ls -la "${NUSQLITE3_DIR}"
 
-log "Installing @yao-pkg/pkg"
-npm install -g @yao-pkg/pkg@latest
+log "Installing @yao-pkg/pkg ${YAO_PKG_VERSION}"
+npm install -g "@yao-pkg/pkg@${YAO_PKG_VERSION}"
 
 log "Packaging binary with pkg (node${NODE_VERSION}-linux-arm64)"
 cd "${ABS_SRC}"

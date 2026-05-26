@@ -4,16 +4,22 @@ on:
   workflow_dispatch:
     inputs:
       abs_version:
-        description: 'Upstream audiobookshelf tag to build (e.g. v2.35.0). Leave empty for latest release.'
+        description: "Upstream audiobookshelf tag to build (e.g. v2.35.0). Leave empty for latest release."
         required: false
         type: string
       publish_release:
-        description: 'Attach the artifact to a GitHub Release with this tag (leave empty to skip)'
+        description: "Attach the artifact to a GitHub Release with this tag (leave empty to skip)"
         required: false
         type: string
 
+concurrency:
+  group: build-linux-arm64-${{ inputs.abs_version || 'latest' }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -35,7 +41,6 @@ jobs:
           if [ -z "$v" ]; then
             v="$(gh release view --repo advplyr/audiobookshelf --json tagName --jq .tagName)"
           fi
-          # Whitelist: only allow vX.Y.Z[-suffix] style tags
           if ! printf '%s' "$v" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$'; then
             echo "Refusing untrusted version string: $v" >&2
             exit 1
@@ -76,6 +81,11 @@ jobs:
           cat "$dir/server.log" || true
           grep -qi "Running in production" "$dir/server.log" \
             || { echo "Server did not reach 'Running in production' — see log above"; exit 1; }
+
+      - name: Generate SLSA build provenance
+        uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: dist/audiobookshelf-*-linux-arm64.tar.gz
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
