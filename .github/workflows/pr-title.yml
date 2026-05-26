@@ -1,0 +1,38 @@
+name: pr-title
+
+# Enforces Conventional Commits on PR titles. Squash-merge uses the PR title
+# as the commit message, so validating the title gives us clean history without
+# per-commit hooks.
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            chore
+            ci
+            docs
+            refactor
+            test
+            build
+            perf
+            revert
+          requireScope: false
+          subjectPattern: ^[A-Za-z].+$
+          subjectPatternError: |
+            The PR title subject should start with a letter and contain a short
+            description (e.g. "feat: add windows-amd64 target").

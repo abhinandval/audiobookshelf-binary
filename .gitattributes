@@ -1,0 +1,17 @@
+# Force LF on text files so shell scripts don't break on Windows checkouts
+* text=auto eol=lf
+
+# Explicit text files
+*.sh           text eol=lf
+*.bash         text eol=lf
+*.yml          text eol=lf
+*.yaml         text eol=lf
+*.md           text eol=lf
+*.json         text eol=lf
+
+# Binary files — never CRLF-mangle
+*.png          binary
+*.jpg          binary
+*.gz           binary
+*.zip          binary
+*.tar          binary

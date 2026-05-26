@@ -1,0 +1,5 @@
+# Default severity
+severity=warning
+
+# Allow `source` of files that shellcheck can't follow (e.g. dynamic paths)
+disable=SC1091
