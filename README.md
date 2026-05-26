@@ -30,7 +30,30 @@ Minimum glibc: **2.31** (Debian Bullseye / Raspberry Pi OS Bullseye / Ubuntu 20.
   - Windows: `winget install Gyan.FFmpeg`
   - If your distro ships an older ffmpeg, install a newer build and run with `FFMPEG_PATH=/path/to/ffmpeg FFPROBE_PATH=/path/to/ffprobe SKIP_BINARIES_CHECK=1 ./start.sh`.
 
-## Install (linux-arm64)
+## Quick install
+
+```sh
+curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh
+```
+
+This detects your platform, checks ffmpeg (>= 5.1), verifies the download checksum, installs to `~/.local/share/audiobookshelf/`, adds an `audiobookshelf` command in `~/.local/bin`, and stores data in `~/.audiobookshelf`. Re-running upgrades in place; your data is untouched.
+
+Prefer to read before running? Inspect the script first:
+
+```sh
+curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | less
+```
+
+Non-interactive (e.g. scripts): add `| sh -s -- --yes`.
+
+Uninstall:
+
+```sh
+rm -rf ~/.local/share/audiobookshelf ~/.local/bin/audiobookshelf
+# data (optional): rm -rf ~/.audiobookshelf
+```
+
+## Manual install (linux-arm64)
 
 ```sh
 # Replace VERSION with the latest from Releases

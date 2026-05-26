@@ -14,7 +14,8 @@ actionlint = "1.7.12"
 description = "Run all lint checks (shellcheck, shfmt, actionlint, prettier)"
 run = [
   "shellcheck scripts/*.sh",
-  "shfmt -i 4 -ci -sr -d scripts/*.sh",
+  "shellcheck -s sh install.sh",
+  "shfmt -i 4 -ci -sr -d scripts/*.sh install.sh",
   "actionlint",
   "npx prettier --check .",
 ]
@@ -22,6 +23,6 @@ run = [
 [tasks.fmt]
 description = "Auto-fix formatting (shfmt + prettier write)"
 run = [
-  "shfmt -i 4 -ci -sr -w scripts/*.sh",
+  "shfmt -i 4 -ci -sr -w scripts/*.sh install.sh",
   "npx prettier --write .",
 ]
