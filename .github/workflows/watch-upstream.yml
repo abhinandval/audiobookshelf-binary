@@ -1,0 +1,51 @@
+name: watch-upstream
+
+# Daily check for new audiobookshelf releases upstream. When one appears and we
+# don't already have a release for that tag, dispatch the build workflow with
+# publish_release set so a binary ships automatically. The build's smoke + E2E
+# gate is the safety net for broken upstream releases.
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write # to dispatch build-linux-arm64.yml
+
+concurrency:
+  group: watch-upstream
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Dispatch build if upstream has a new release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          upstream="$(gh release view --repo advplyr/audiobookshelf --json tagName --jq .tagName)"
+
+          # Whitelist tag format before passing it to any other workflow.
+          if ! printf '%s' "$upstream" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+([.-][A-Za-z0-9.-]+)?$'; then
+            echo "Refusing untrusted upstream tag: $upstream" >&2
+            exit 1
+          fi
+
+          if gh release view "$upstream" --repo "$REPO" >/dev/null 2>&1; then
+            echo "Already have release ${upstream}; nothing to do."
+            exit 0
+          fi
+
+          echo "New upstream release detected: ${upstream} — dispatching build."
+          gh workflow run build-linux-arm64.yml \
+            --repo "$REPO" \
+            --ref main \
+            -f abs_version="$upstream" \
+            -f publish_release="$upstream"
