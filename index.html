@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>
+      audiobookshelf-binary — self-host audiobookshelf on Raspberry Pi & arm64 (no Docker)
+    </title>
+    <meta
+      name="description"
+      content="Standalone Linux arm64 binaries of audiobookshelf for bare-metal self-hosting — Raspberry Pi, Android/Termux, low-resource ARM SBCs. Auto-rebuilt on every upstream release. One-line install, no Docker required."
+    />
+    <meta name="theme-color" content="#fb923c" />
+    <link rel="canonical" href="https://abhinandval.github.io/audiobookshelf-binary/" />
+
+    <!-- Open Graph / Twitter (renders cards on Reddit, Mastodon, Slack, etc.) -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="audiobookshelf-binary — self-host audiobookshelf on Raspberry Pi & arm64"
+    />
+    <meta
+      property="og:description"
+      content="Standalone Linux arm64 binaries of audiobookshelf for bare-metal self-hosting. One-line install, no Docker."
+    />
+    <meta property="og:url" content="https://abhinandval.github.io/audiobookshelf-binary/" />
+    <meta
+      property="og:image"
+      content="https://opengraph.githubassets.com/1/abhinandval/audiobookshelf-binary"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        font:
+          16px/1.6 system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        max-width: 720px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 1.8rem;
+      }
+      h2 {
+        margin-top: 2rem;
+        font-size: 1.15rem;
+      }
+      code {
+        background: rgba(127, 127, 127, 0.18);
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        font-size: 0.95em;
+      }
+      pre {
+        background: #1f2937;
+        color: #f9fafb;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+      }
+      pre code {
+        background: transparent;
+        padding: 0;
+        color: inherit;
+      }
+      a {
+        color: #ea580c;
+      }
+      footer {
+        opacity: 0.7;
+        font-size: 0.875rem;
+        margin-top: 3rem;
+        border-top: 1px solid rgba(127, 127, 127, 0.25);
+        padding-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>audiobookshelf-binary</h1>
+    <p>
+      Standalone Linux arm64 binaries of
+      <a href="https://github.com/advplyr/audiobookshelf">audiobookshelf</a> for bare-metal
+      self-hosting — <strong>Raspberry Pi</strong>, Android/Termux, low-resource ARM SBCs.
+      <strong>No Docker required.</strong> Auto-rebuilt on every upstream release.
+    </p>
+
+    <h2>One-line install</h2>
+    <pre><code>curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh</code></pre>
+    <p>
+      Detects your platform, verifies the download by SHA256, installs to
+      <code>~/.local/share/audiobookshelf/</code>, adds an <code>audiobookshelf</code> command on
+      your <code>PATH</code>, and stores data in <code>~/.audiobookshelf/</code>. Edit
+      <code>~/.audiobookshelf/.env</code> to set <code>PORT</code>, <code>HOST</code>, or paths.
+      Re-running upgrades in place; your data is untouched.
+    </p>
+
+    <h2>Prerequisites</h2>
+    <ul>
+      <li>
+        <strong>ffmpeg ≥ 5.1</strong> on <code>PATH</code> — <code>sudo apt install ffmpeg</code> on
+        Debian / Ubuntu / Raspberry Pi OS.
+      </li>
+    </ul>
+
+    <h2>Why this exists</h2>
+    <p>
+      The official audiobookshelf project ships Docker images but no standalone binaries. This
+      project fills the gap for users running on Raspberry Pi, Android (Termux), or any host where
+      containers add unwanted overhead.
+    </p>
+
+    <p>
+      <strong>Links:</strong>
+      <a href="https://github.com/abhinandval/audiobookshelf-binary">Source</a> ·
+      <a href="https://github.com/abhinandval/audiobookshelf-binary/releases">Releases</a> ·
+      <a href="https://github.com/abhinandval/audiobookshelf-binary#readme">Full README</a>
+    </p>
+
+    <footer>
+      Unofficial. Not affiliated with advplyr/audiobookshelf. Built from upstream source via GitHub
+      Actions. GPL-3.0.
+    </footer>
+  </body>
+</html>
