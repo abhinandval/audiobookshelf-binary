@@ -12,7 +12,7 @@ Audiobookshelf publishes Docker images for `linux/amd64` and `linux/arm64`, but 
 
 | OS            | Architecture          | Status  |
 | ------------- | --------------------- | ------- |
-| Linux (glibc) | arm64                 | PoC     |
+| Linux (glibc) | arm64                 | Stable  |
 | Linux (glibc) | amd64                 | Planned |
 | Windows       | amd64                 | Planned |
 | Windows       | arm64                 | Planned |
@@ -20,6 +20,8 @@ Audiobookshelf publishes Docker images for `linux/amd64` and `linux/arm64`, but 
 | macOS         | amd64 (Intel)         | Planned |
 
 Minimum glibc: **2.31** (Debian Bullseye / Raspberry Pi OS Bullseye / Ubuntu 20.04 and newer).
+
+Linux-arm64 binaries are **rebuilt automatically** when a new upstream audiobookshelf release appears — a daily check (`.github/workflows/watch-upstream.yml`) dispatches the build and only publishes if the smoke and E2E gates pass.
 
 ## Prerequisites
 
