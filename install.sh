@@ -6,6 +6,7 @@
 set -eu
 
 REPO="abhinandval/audiobookshelf-binary"
+PAGES_BASE="https://abhinandval.github.io/audiobookshelf-binary"
 INSTALL_DIR="${HOME}/.local/share/audiobookshelf"
 BIN_DIR="${HOME}/.local/bin"
 ABS_HOME="${ABS_HOME:-${HOME}/.audiobookshelf}"
@@ -184,17 +185,31 @@ do_install() {
     rm -rf "$INSTALL_DIR"
     mv "$extracted" "$INSTALL_DIR"
 
-    # Launcher on PATH. Calls the bundle's start.sh by absolute path (no symlink
-    # in the chain, so start.sh resolves its own dir correctly on every release)
-    # and pins data to ABS_HOME regardless of the bundled start.sh's defaults.
-    cat > "${BIN_DIR}/audiobookshelf" << EOF
-#!/bin/sh
-: "\${CONFIG_PATH:=${ABS_HOME}/config}"
-: "\${METADATA_PATH:=${ABS_HOME}/metadata}"
-export CONFIG_PATH METADATA_PATH
-exec "${INSTALL_DIR}/start.sh" "\$@"
+    # The binary tarball intentionally omits start.sh — the launcher lives with
+    # the tooling and is fetched fresh from Pages, so launcher fixes ship
+    # without rebuilding the binary.
+    info "Fetching launcher from ${PAGES_BASE}/scripts/start.sh"
+    fetch "${PAGES_BASE}/scripts/start.sh" "${INSTALL_DIR}/start.sh" ||
+        err "could not download launcher (start.sh)"
+    chmod +x "${INSTALL_DIR}/start.sh"
+
+    # Plain symlink → start.sh. With the latest launcher's symlink-safe HERE,
+    # no path-baking wrapper is needed.
+    ln -sf "${INSTALL_DIR}/start.sh" "${BIN_DIR}/audiobookshelf"
+
+    # User settings template — never clobber existing edits.
+    if [ ! -f "${ABS_HOME}/.env" ]; then
+        cat > "${ABS_HOME}/.env" << 'EOF'
+# audiobookshelf settings (KEY=value). Uncomment and edit as needed.
+# Survives upgrades; sourced by start.sh before defaults apply.
+# PORT=3333
+# HOST=0.0.0.0          # 127.0.0.1 = local only (reverse proxy); :: = IPv6/dual-stack
+# CONFIG_PATH=/path/to/config
+# METADATA_PATH=/path/to/metadata
+# FFMPEG_PATH=/usr/local/bin/ffmpeg
 EOF
-    chmod +x "${BIN_DIR}/audiobookshelf"
+    fi
+
     info "Installed to ${INSTALL_DIR}"
 }
 

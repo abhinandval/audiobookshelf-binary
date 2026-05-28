@@ -38,6 +38,8 @@ curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh
 
 This detects your platform, checks ffmpeg (>= 5.1), verifies the download checksum, installs to `~/.local/share/audiobookshelf/`, adds an `audiobookshelf` command in `~/.local/bin`, and stores data in `~/.audiobookshelf`. Re-running upgrades in place; your data is untouched.
 
+User settings live in **`~/.audiobookshelf/.env`** (created with a commented template on first install). Edit it to override `PORT`, `HOST`, `CONFIG_PATH`, etc. — it survives upgrades.
+
 Prefer to read before running? Inspect the script first:
 
 ```sh
@@ -61,6 +63,12 @@ VERSION=v2.35.0
 curl -LO "https://github.com/abhinandval/audiobookshelf-binary/releases/download/${VERSION}/audiobookshelf-${VERSION}-linux-arm64.tar.gz"
 tar -xzf "audiobookshelf-${VERSION}-linux-arm64.tar.gz"
 cd "audiobookshelf-${VERSION}-linux-arm64"
+
+# The binary tarball doesn't bundle the launcher (it ships with the installer
+# tooling so launcher fixes don't need a binary rebuild). Fetch it once:
+curl -LO https://abhinandval.github.io/audiobookshelf-binary/scripts/start.sh
+chmod +x start.sh
+
 ./start.sh
 ```
 
