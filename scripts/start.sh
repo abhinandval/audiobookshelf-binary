@@ -11,18 +11,42 @@ set -euo pipefail
 FFMPEG_MIN_MAJOR=5
 FFMPEG_MIN_MINOR=1
 
-HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+# Resolve this script's real location, following symlinks. The installer
+# symlinks ~/.local/bin/audiobookshelf -> this file, so HERE must point at the
+# extracted bundle (not the symlink's dir) or we'd re-exec ourselves.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+    dir="$(cd -P -- "$(dirname -- "$SOURCE")" &> /dev/null && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    case "$SOURCE" in
+        /*) ;;
+        *) SOURCE="$dir/$SOURCE" ;;
+    esac
+done
+HERE="$(cd -P -- "$(dirname -- "$SOURCE")" &> /dev/null && pwd)"
 
 export NUSQLITE3_DIR="${NUSQLITE3_DIR:-${HERE}/lib}"
 export NUSQLITE3_PATH="${NUSQLITE3_PATH:-${HERE}/lib/libnusqlite3.so}"
 
-# Runtime configuration. Defaults keep all data next to the binary so the
-# install is self-contained and behaves the same regardless of the directory
-# you launch it from. Point CONFIG_PATH/METADATA_PATH elsewhere for a
-# persistent location that survives replacing the binary on upgrade.
+# Runtime configuration. Data lives under ~/.audiobookshelf by default so it
+# survives replacing the binary on upgrade. Override ABS_HOME, or the
+# individual paths, or pass --config/--metadata. Falls back to next-to-binary
+# when HOME is unset.
+ABS_HOME="${ABS_HOME:-${HOME:-$HERE}/.audiobookshelf}"
+
+# Optional user settings file (KEY=value lines: PORT, HOST, CONFIG_PATH, ...).
+# Sourced before the defaults below so it wins; lives in the data dir so it
+# survives upgrades. set -a exports every assignment to the binary.
+if [ -f "${ABS_HOME}/.env" ]; then
+    set -a
+    # shellcheck source=/dev/null
+    . "${ABS_HOME}/.env"
+    set +a
+fi
+
 export PORT="${PORT:-3333}"
-export CONFIG_PATH="${CONFIG_PATH:-${HERE}/config}"
-export METADATA_PATH="${METADATA_PATH:-${HERE}/metadata}"
+export CONFIG_PATH="${CONFIG_PATH:-${ABS_HOME}/config}"
+export METADATA_PATH="${METADATA_PATH:-${ABS_HOME}/metadata}"
 # HOST is intentionally not defaulted: leaving it unset lets audiobookshelf
 # bind all interfaces dual-stack (IPv4 + IPv6). Export HOST=127.0.0.1 yourself
 # to expose only locally (e.g. behind a reverse proxy).

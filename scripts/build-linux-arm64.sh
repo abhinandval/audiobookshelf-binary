@@ -90,8 +90,10 @@ cp "${ABS_SRC}/dist/audiobookshelf" "${STAGE_DIR}/audiobookshelf"
 cp "${NUSQLITE3_DIR}"/*.so "${STAGE_DIR}/lib/"
 cp "${ABS_SRC}/LICENSE" "${STAGE_DIR}/LICENSE.audiobookshelf"
 cp "$(dirname "$0")/../README.md" "${STAGE_DIR}/README.md" 2> /dev/null || true
-cp "$(dirname "$0")/start.sh" "${STAGE_DIR}/start.sh"
-chmod +x "${STAGE_DIR}/audiobookshelf" "${STAGE_DIR}/start.sh"
+# start.sh is intentionally NOT bundled: the installer delivers it from Pages
+# so launcher fixes ship without needing a new binary release. Manual-download
+# users fetch it separately (see README).
+chmod +x "${STAGE_DIR}/audiobookshelf"
 
 cat > "${STAGE_DIR}/BUILD_INFO.txt" << EOF
 audiobookshelf binary build
