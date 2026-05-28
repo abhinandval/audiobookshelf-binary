@@ -98,7 +98,26 @@
       <code>~/.local/share/audiobookshelf/</code>, adds an <code>audiobookshelf</code> command on
       your <code>PATH</code>, and stores data in <code>~/.audiobookshelf/</code>. Edit
       <code>~/.audiobookshelf/.env</code> to set <code>PORT</code>, <code>HOST</code>, or paths.
-      Re-running upgrades in place; your data is untouched.
+    </p>
+
+    <h2>Update</h2>
+    <pre><code>curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh -s -- --update</code></pre>
+    <p>
+      Re-installs the latest release (or pin a specific version with
+      <code>--version v2.36.0</code>) without prompting. Your <code>~/.audiobookshelf/.env</code>,
+      database, and metadata are not touched.
+    </p>
+
+    <h2>Uninstall</h2>
+    <pre><code>curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh -s -- --uninstall</code></pre>
+    <p>
+      Removes the binary and the <code>audiobookshelf</code> command, keeps your config and data in
+      <code>~/.audiobookshelf/</code>. Add <code>--purge</code> to also remove that:
+    </p>
+    <pre><code>curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh -s -- --uninstall --purge</code></pre>
+    <p>
+      Your audiobook / podcast media lives at the library paths you configured inside the app
+      (elsewhere on disk) and is <strong>never touched</strong>, even with <code>--purge</code>.
     </p>
 
     <h2>Prerequisites</h2>
