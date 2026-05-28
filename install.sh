@@ -1,8 +1,10 @@
 #!/bin/sh
-# audiobookshelf-binary installer.
+# audiobookshelf-binary installer / updater / uninstaller.
 # Usage:
 #   curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh
 #   curl -sS .../install.sh | sh -s -- --yes --version v2.35.0
+#   curl -sS .../install.sh | sh -s -- --update
+#   curl -sS .../install.sh | sh -s -- --uninstall [--purge] [--yes]
 set -eu
 
 REPO="abhinandval/audiobookshelf-binary"
@@ -16,6 +18,8 @@ FFMPEG_MIN_MINOR=1
 ASSUME_YES=0
 SKIP_FFMPEG=0
 VERSION=""
+MODE="install" # install | update | uninstall
+PURGE=0
 
 WORKDIR=""
 cleanup() { [ -n "$WORKDIR" ] && rm -rf "$WORKDIR"; }
@@ -37,14 +41,44 @@ while [ $# -gt 0 ]; do
             shift
             ;;
         --version=*) VERSION="${1#*=}" ;;
+        --update) MODE="update" ;;
+        --uninstall) MODE="uninstall" ;;
+        --purge) PURGE=1 ;;
         -h | --help)
-            info "Usage: install.sh [--yes] [--skip-ffmpeg-check] [--version <tag>]"
+            cat << 'EOF'
+Usage: install.sh [options]
+
+Default action installs the latest release.
+
+Options:
+  --update                Re-install the latest (or --version) release
+                          without prompting. Requires an existing install.
+                          Leaves ~/.audiobookshelf (config + .env) untouched.
+  --uninstall             Remove the installed binary and command symlink.
+                          Keeps ~/.audiobookshelf (config + .env).
+  --purge                 With --uninstall, also remove ~/.audiobookshelf
+                          (config, metadata, .env). Library/media files
+                          are not in any of these dirs and are not touched.
+  --version <tag>         Install/update a specific upstream tag (e.g. v2.35.0).
+  --skip-ffmpeg-check     Skip the ffmpeg >= 5.1 preflight gate.
+  -y, --yes               Skip the confirmation prompt.
+  -h, --help              Show this help.
+EOF
             exit 0
             ;;
         *) err "unknown option: $1" ;;
     esac
     shift
 done
+
+# Validate mode/flag combinations.
+if [ "$PURGE" -eq 1 ] && [ "$MODE" != "uninstall" ]; then
+    err "--purge can only be used with --uninstall"
+fi
+# --update is unattended by design.
+if [ "$MODE" = "update" ]; then
+    ASSUME_YES=1
+fi
 
 have() { command -v "$1" > /dev/null 2>&1; }
 
@@ -227,10 +261,21 @@ finish() {
     info "  ${cmd}"
     info "Then open http://localhost:3333"
     info ""
-    info "Uninstall: rm -rf \"${INSTALL_DIR}\" \"${BIN_DIR}/audiobookshelf\"  (data: ${ABS_HOME})"
+    info "Update later:    curl -sS ${PAGES_BASE}/install.sh | sh -s -- --update"
+    info "Uninstall later: curl -sS ${PAGES_BASE}/install.sh | sh -s -- --uninstall [--purge]"
 }
 
-main() {
+# Reads "Upstream version: vX.Y.Z" from the installed bundle, or empty.
+installed_version() {
+    [ -f "${INSTALL_DIR}/BUILD_INFO.txt" ] || return 0
+    awk -F': ' '/^Upstream version:/ {
+        gsub(/^[ \t]+|[ \t]+$/, "", $2)
+        print $2
+        exit
+    }' "${INSTALL_DIR}/BUILD_INFO.txt"
+}
+
+do_install_flow() {
     info "audiobookshelf-binary installer"
     require_tools
 
@@ -255,6 +300,100 @@ main() {
     confirm
     do_install
     finish
+}
+
+do_update_flow() {
+    info "audiobookshelf-binary updater"
+
+    if [ ! -d "$INSTALL_DIR" ]; then
+        err "no existing installation at ${INSTALL_DIR}; run without --update to install first."
+    fi
+
+    require_tools
+
+    TARGET="$(detect_target || true)"
+    [ -n "$TARGET" ] || err "unsupported platform: $(uname -s) $(uname -m)"
+    if ! target_supported "$TARGET"; then
+        err "no binary available yet for ${TARGET}."
+    fi
+
+    check_ffmpeg
+    resolve_release
+
+    current="$(installed_version)"
+    info ""
+    info "  Current:  ${current:-unknown}"
+    info "  New:      ${RESOLVED_TAG}"
+    info "  Target:   ${TARGET}"
+    info "  Install:  ${INSTALL_DIR}"
+    info ""
+
+    if [ -n "$current" ] && [ "$current" = "$RESOLVED_TAG" ]; then
+        info "Already at ${RESOLVED_TAG}. Re-installing in place (idempotent)."
+    fi
+
+    # --update is unattended (ASSUME_YES already forced above).
+    do_install
+    info ""
+    info "Updated to ${RESOLVED_TAG}."
+    info "Your settings at ${ABS_HOME}/.env and data at ${ABS_HOME}/{config,metadata} were not touched."
+}
+
+do_uninstall_flow() {
+    info "audiobookshelf-binary uninstaller"
+
+    cmd="${BIN_DIR}/audiobookshelf"
+    removed_any=0
+    info ""
+    info "Will remove:"
+    if [ -e "$cmd" ] || [ -L "$cmd" ]; then
+        info "  - ${cmd}"
+        removed_any=1
+    fi
+    if [ -d "$INSTALL_DIR" ]; then
+        info "  - ${INSTALL_DIR}/"
+        removed_any=1
+    fi
+    if [ "$PURGE" -eq 1 ] && [ -d "$ABS_HOME" ]; then
+        info "  - ${ABS_HOME}/  (config, metadata, .env)"
+        removed_any=1
+    fi
+
+    if [ "$removed_any" -eq 0 ]; then
+        info "  (nothing to remove)"
+        info ""
+        info "No installation found at ${INSTALL_DIR}. Done."
+        return 0
+    fi
+
+    info ""
+    if [ "$PURGE" -eq 1 ]; then
+        info "Library/media files are stored at the paths you configured inside audiobookshelf"
+        info "(outside of the directories listed above) and will NOT be touched."
+    else
+        info "User config and data at ${ABS_HOME}/ will be kept."
+        info "Add --purge to also remove ${ABS_HOME}/ (library/media files are not in there)."
+    fi
+    info ""
+
+    confirm
+
+    rm -f "$cmd"
+    rm -rf "$INSTALL_DIR"
+    if [ "$PURGE" -eq 1 ]; then
+        rm -rf "$ABS_HOME"
+    fi
+    info ""
+    info "Done."
+}
+
+main() {
+    case "$MODE" in
+        install) do_install_flow ;;
+        update) do_update_flow ;;
+        uninstall) do_uninstall_flow ;;
+        *) err "internal: unknown mode '${MODE}'" ;;
+    esac
 }
 
 main

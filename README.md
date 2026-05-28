@@ -50,11 +50,23 @@ curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | less
 
 Non-interactive (e.g. scripts): add `| sh -s -- --yes`.
 
-Uninstall:
+### Update
 
 ```sh
-rm -rf ~/.local/share/audiobookshelf ~/.local/bin/audiobookshelf
-# data (optional): rm -rf ~/.audiobookshelf
+curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh -s -- --update
+```
+
+Re-installs the latest release (or `--version v2.36.0` to pin) without prompting. Your `~/.audiobookshelf/.env`, database, and metadata are not touched.
+
+### Uninstall
+
+```sh
+# remove the binary + command, keep your config and data
+curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh -s -- --uninstall
+
+# also remove ~/.audiobookshelf (config, metadata, .env). Library/media files
+# you configured inside audiobookshelf live elsewhere and are NOT touched.
+curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh -s -- --uninstall --purge
 ```
 
 ## Manual install (linux-arm64)
