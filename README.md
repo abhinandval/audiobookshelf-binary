@@ -1,6 +1,10 @@
 # audiobookshelf-binary
 
-Community-built standalone binaries of [audiobookshelf](https://github.com/advplyr/audiobookshelf) for bare-metal self-hosting — no Docker required.
+**Install [audiobookshelf](https://github.com/advplyr/audiobookshelf) without Docker** — standalone Linux arm64 binaries for **Raspberry Pi**, **Android/Termux**, and low-resource ARM SBCs. One-line install, auto-rebuilt on every upstream release.
+
+```sh
+curl -sS https://abhinandval.github.io/audiobookshelf-binary/install.sh | sh
+```
 
 > **Unofficial.** Not affiliated with [advplyr/audiobookshelf](https://github.com/advplyr/audiobookshelf). Built from upstream source via GitHub Actions on every release. Source for the build pipeline lives in this repo; binaries are published to the [Releases page](../../releases).
 
