@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
-      - uses: jdx/mise-action@v2
+      - uses: jdx/mise-action@v4
       - name: Install npm tooling (prettier)
         run: npm ci
       - name: Run lint task
