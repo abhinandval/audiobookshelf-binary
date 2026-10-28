@@ -20,7 +20,7 @@ You need:
 
 - `git`, a recent Bash (4+)
 - [`mise`](https://mise.jdx.dev) — provides node + shellcheck + shfmt + actionlint at pinned versions
-- Docker if you want to run a build locally (the build runs in a `debian:bullseye-slim` arm64 container).
+- Docker if you want to run a build locally (the build runs in a `debian:trixie-slim` arm64 container).
 
 One-time setup:
 
@@ -52,15 +52,25 @@ On an arm64 host (Apple Silicon Mac with Docker works):
 ```sh
 docker run --rm \
   --platform linux/arm64 \
-  -e ABS_VERSION=v2.35.0 \
+  -e ABS_VERSION=v2.37.2 \
   -e WORK_DIR=/work/build-cache \
   -e OUT_DIR=/work/dist \
   -v "$PWD:/work" -w /work \
-  debian:bullseye-slim \
+  debian:trixie-slim \
   bash /work/scripts/build-linux-arm64.sh
 ```
 
 The resulting tarball lands in `dist/`.
+
+To smoke-test an extracted bundle on Linux arm64 with ffmpeg and curl installed:
+
+```sh
+bash scripts/smoke-bundle.sh /path/to/audiobookshelf-v2.37.2-linux-arm64
+```
+
+Run launcher regression checks with `bash tests/start.sh`.
+
+The build follows upstream's Node 24 and TypeScript server pipeline. `NODE_VERSION` overrides the exact Node release (default `24.22.1`); the pkg target uses its major version. Older upstream tags without `build:server` are not supported by this pipeline. On small local VMs, run builds sequentially to avoid memory pressure during Nuxt compilation.
 
 ## Commit messages and PR titles
 

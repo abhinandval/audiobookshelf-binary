@@ -24,3 +24,5 @@ jobs:
         run: npm ci
       - name: Run lint task
         run: mise run lint
+      - name: Check launcher behavior
+        run: bash tests/start.sh

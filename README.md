@@ -23,13 +23,13 @@ Audiobookshelf publishes Docker images for `linux/amd64` and `linux/arm64`, but 
 | macOS         | arm64 (Apple Silicon) | Planned |
 | macOS         | amd64 (Intel)         | Planned |
 
-Minimum glibc: **2.31** (Debian Bullseye / Raspberry Pi OS Bullseye / Ubuntu 20.04 and newer).
+Build and release platform: **Debian 13 Trixie** (Linux arm64). The Debian 13 bundle is also smoke-tested on Debian 12 for compatibility. Debian Bullseye and Ubuntu 20.04 are no longer supported.
 
 Linux-arm64 binaries are **rebuilt automatically** when a new upstream audiobookshelf release appears — a daily check (`.github/workflows/watch-upstream.yml`) dispatches the build and only publishes if the smoke and E2E gates pass.
 
 ## Prerequisites
 
-- **ffmpeg (>= 5.1)** must be installed and on `PATH`. The binary does not bundle it. `start.sh` checks the version and refuses to start on anything older, since audiobookshelf would otherwise try to download its own ffmpeg (which can fail on Android / uncommon arm targets).
+- **ffmpeg and ffprobe (>= 5.1)** must be installed and on `PATH`. The binary does not bundle them. `start.sh` checks both tools, passes their paths to upstream, and disables upstream's binary downloads so newer distro versions are used directly.
   - Debian/Ubuntu/Raspberry Pi OS: `sudo apt install ffmpeg`
   - Fedora: `sudo dnf install ffmpeg`
   - macOS: `brew install ffmpeg`
@@ -124,8 +124,8 @@ A GitHub Actions workflow polls upstream releases, then for each new tag:
 
 1. Checks out audiobookshelf source at the tag
 2. Builds the Nuxt client (`client/dist`)
-3. Installs server deps and downloads platform-appropriate `libnusqlite3` from [mikiher/nunicode-sqlite](https://github.com/mikiher/nunicode-sqlite)
-4. Bundles into a single executable using [`@yao-pkg/pkg`](https://github.com/yao-pkg/pkg) (community fork of vercel/pkg)
+3. Installs server build dependencies, compiles upstream's TypeScript server (`npm run build:server`), removes development dependencies, and downloads platform-appropriate `libnusqlite3` from [mikiher/nunicode-sqlite](https://github.com/mikiher/nunicode-sqlite)
+4. Bundles the compiled server into a Node 24 executable using [`@yao-pkg/pkg`](https://github.com/yao-pkg/pkg) (community fork of vercel/pkg). The build runtime is pinned to Node 24.22.1, a security release on upstream's Node 24 line.
 5. Archives binary + libs + LICENSE + README, generates checksums, uploads as a release asset
 
 Build logs are public on the [Actions tab](../../actions). Source pinned to upstream tags by SHA.

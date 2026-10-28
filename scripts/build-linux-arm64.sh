@@ -8,22 +8,26 @@
 # Optional env vars:
 #   WORK_DIR          - scratch directory (default: ./build-cache)
 #   OUT_DIR           - where the packaged tarball is written (default: ./dist)
-#   NODE_VERSION      - Node major used for pkg target (default: 20)
+#   NODE_VERSION      - exact Node release (default: 24.22.1)
 #   NUSQLITE3_VERSION - mikiher/nunicode-sqlite tag (default: v1.2)
-#   YAO_PKG_VERSION   - @yao-pkg/pkg npm version (default: 6.19.0)
+#   YAO_PKG_VERSION   - @yao-pkg/pkg npm version (default: 6.24.0)
 #
-# Designed to run inside `debian:bullseye-slim` on a native arm64 host so the
-# resulting binary links against glibc 2.31 (Debian Bullseye / RPi OS Bullseye
-# / Ubuntu 20.04+).
+# Designed to run inside `debian:trixie-slim` on a native arm64 host.
 #
 set -euo pipefail
 
 : "${ABS_VERSION:?ABS_VERSION must be set, e.g. v2.35.0}"
 WORK_DIR="${WORK_DIR:-$(pwd)/build-cache}"
 OUT_DIR="${OUT_DIR:-$(pwd)/dist}"
-NODE_VERSION="${NODE_VERSION:-20}"
+NODE_VERSION="${NODE_VERSION:-24.22.1}"
 NUSQLITE3_VERSION="${NUSQLITE3_VERSION:-v1.2}"
-YAO_PKG_VERSION="${YAO_PKG_VERSION:-6.19.0}"
+YAO_PKG_VERSION="${YAO_PKG_VERSION:-6.24.0}"
+if [[ ! "$NODE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "NODE_VERSION must be an exact release, e.g. 24.22.1" >&2
+    exit 1
+fi
+NODE_MAJOR="${NODE_VERSION%%.*}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 
 TARGET_TRIPLE="linux-arm64"
 ARCHIVE_NAME="audiobookshelf-${ABS_VERSION}-${TARGET_TRIPLE}"
@@ -40,8 +44,8 @@ apt-get install -y --no-install-recommends \
     > /dev/null
 
 log "Installing Node.js ${NODE_VERSION} (arm64)"
-NODE_DIST="node-v${NODE_VERSION}.20.0-linux-arm64"
-curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}.20.0/${NODE_DIST}.tar.xz" |
+NODE_DIST="node-v${NODE_VERSION}-linux-arm64"
+curl -fsSL "https://nodejs.org/dist/v${NODE_VERSION}/${NODE_DIST}.tar.xz" |
     tar -xJ -C /usr/local --strip-components=1
 node --version
 npm --version
@@ -58,9 +62,12 @@ cd "${ABS_SRC}/client"
 npm ci --no-audit --no-fund
 npm run generate
 
-log "Installing server deps (compiles sqlite3 for arm64 if no prebuild)"
+log "Compiling server (upstream TypeScript build)"
 cd "${ABS_SRC}"
-npm ci --no-audit --no-fund --omit=dev
+npm ci --no-audit --no-fund --include=dev
+npm run build:server
+test -f dist-server/index.js
+npm prune --no-audit --no-fund --omit=dev
 
 log "Downloading libnusqlite3 ${NUSQLITE3_VERSION} for ${TARGET_TRIPLE}"
 NUSQLITE3_ZIP="${WORK_DIR}/libnusqlite3-${TARGET_TRIPLE}.zip"
@@ -75,11 +82,11 @@ ls -la "${NUSQLITE3_DIR}"
 log "Installing @yao-pkg/pkg ${YAO_PKG_VERSION}"
 npm install -g "@yao-pkg/pkg@${YAO_PKG_VERSION}"
 
-log "Packaging binary with pkg (node${NODE_VERSION}-linux-arm64)"
+log "Packaging binary with pkg (node${NODE_MAJOR}-linux-arm64)"
 cd "${ABS_SRC}"
 mkdir -p dist
 pkg \
-    --target "node${NODE_VERSION}-linux-arm64" \
+    --target "node${NODE_MAJOR}-linux-arm64" \
     --output dist/audiobookshelf \
     .
 
@@ -88,8 +95,10 @@ rm -rf "${STAGE_DIR}"
 mkdir -p "${STAGE_DIR}/lib"
 cp "${ABS_SRC}/dist/audiobookshelf" "${STAGE_DIR}/audiobookshelf"
 cp "${NUSQLITE3_DIR}"/*.so "${STAGE_DIR}/lib/"
+# Upstream's BinaryManager requires a version sidecar for external libraries.
+printf '%s\n' "${NUSQLITE3_VERSION#v}" > "${STAGE_DIR}/lib/libnusqlite3.so.ver"
 cp "${ABS_SRC}/LICENSE" "${STAGE_DIR}/LICENSE.audiobookshelf"
-cp "$(dirname "$0")/../README.md" "${STAGE_DIR}/README.md" 2> /dev/null || true
+cp "${SCRIPT_DIR}/../README.md" "${STAGE_DIR}/README.md"
 # start.sh is intentionally NOT bundled: the installer delivers it from Pages
 # so launcher fixes ship without needing a new binary release. Manual-download
 # users fetch it separately (see README).
@@ -102,7 +111,9 @@ Upstream version: ${ABS_VERSION}
 Upstream commit:  $(cd "${ABS_SRC}" && git rev-parse HEAD)
 Target:           ${TARGET_TRIPLE}
 libnusqlite3:     ${NUSQLITE3_VERSION}
-Node target:      node${NODE_VERSION}-linux-arm64
+Node build:       ${NODE_VERSION}
+Node target:      node${NODE_MAJOR}-linux-arm64
+Packager:         @yao-pkg/pkg ${YAO_PKG_VERSION}
 Built:            $(date -u +%Y-%m-%dT%H:%M:%SZ)
 EOF
 
