@@ -41,7 +41,7 @@ The test runs in the existing build job on the `ubuntu-24.04-arm` runner, so Chr
 
 ```
 build job (build-linux-arm64.yml)
-  build (bullseye container)
+  build (trixie container)
     -> smoke test (existing: boots binary 15s, greps "Running in production")
     -> E2E test (NEW)
     -> upload screenshots + report  (if: always())

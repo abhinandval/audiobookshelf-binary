@@ -48,7 +48,7 @@ jobs:
           echo "Building audiobookshelf $v"
           echo "abs_version=$v" >> "$GITHUB_OUTPUT"
 
-      - name: Build inside debian:bullseye-slim (glibc 2.31)
+      - name: Build inside debian:trixie-slim (Debian 13)
         env:
           ABS_VERSION: ${{ steps.resolve.outputs.abs_version }}
         run: |
@@ -60,10 +60,10 @@ jobs:
             -e OUT_DIR=/work/dist \
             -v "$GITHUB_WORKSPACE:/work" \
             -w /work \
-            debian:bullseye-slim \
+            debian:trixie-slim \
             bash /work/scripts/build-linux-arm64.sh
 
-      - name: Smoke test — binary starts and reaches production mode
+      - name: Smoke test — production startup and HTTP responses
         env:
           ABS_VERSION: ${{ steps.resolve.outputs.abs_version }}
         run: |
@@ -72,21 +72,11 @@ jobs:
           test -f "$archive" || { echo "Missing $archive"; exit 1; }
           mkdir -p smoke && tar -xzf "$archive" -C smoke
           dir="smoke/audiobookshelf-${ABS_VERSION}-linux-arm64"
-          # The tarball intentionally omits start.sh (delivered by the installer
-          # in production); supply the repo's launcher for the smoke test.
-          cp "$GITHUB_WORKSPACE/scripts/start.sh" "$dir/start.sh"
           ls -lh "$dir"
           file "$dir/audiobookshelf"
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends ffmpeg >/dev/null
-          (
-            cd "$dir"
-            timeout 15 ./start.sh >server.log 2>&1 || true
-          )
-          echo "--- server.log ---"
-          cat "$dir/server.log" || true
-          grep -qi "Running in production" "$dir/server.log" \
-            || { echo "Server did not reach 'Running in production' — see log above"; exit 1; }
+          bash scripts/smoke-bundle.sh "$dir"
 
       - name: Set up node tooling
         uses: jdx/mise-action@v5.2.2

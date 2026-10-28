@@ -55,30 +55,40 @@ if [ ! -f "${NUSQLITE3_PATH}" ]; then
     echo "warning: libnusqlite3 not found at ${NUSQLITE3_PATH}" >&2
 fi
 
-# ffmpeg gate. If the user pinned FFMPEG_PATH we trust it; otherwise require a
-# recent enough ffmpeg on PATH so audiobookshelf doesn't silently try to
-# download its own (which can fail on Android / uncommon arm targets).
-if [ -n "${FFMPEG_PATH:-}" ]; then
-    : # user-provided ffmpeg, trusted
-elif ! command -v ffmpeg > /dev/null 2>&1; then
-    echo "error: ffmpeg not found on PATH. Install it before running audiobookshelf." >&2
-    echo "  Debian/Ubuntu/Raspberry Pi OS: sudo apt install ffmpeg" >&2
-    exit 1
-else
-    # First line looks like: "ffmpeg version 6.1.1 Copyright ..." (or n6.0, 4.4.2-..., N-12345-g...)
-    ffver="$(ffmpeg -version 2> /dev/null | head -n1 | awk '{print $3}')"
-    ffver="${ffver#[nN]}"
-    if [[ "$ffver" =~ ^([0-9]+)\.([0-9]+) ]]; then
-        ffmajor="${BASH_REMATCH[1]}"
-        ffminor="${BASH_REMATCH[2]}"
-        if ((ffmajor < FFMPEG_MIN_MAJOR || (ffmajor == FFMPEG_MIN_MAJOR && ffminor < FFMPEG_MIN_MINOR))); then
-            echo "error: ffmpeg ${ffmajor}.${ffminor} is too old; audiobookshelf needs >= ${FFMPEG_MIN_MAJOR}.${FFMPEG_MIN_MINOR}." >&2
-            echo "  Upgrade ffmpeg, or point FFMPEG_PATH and FFPROBE_PATH at a newer build and set SKIP_BINARIES_CHECK=1." >&2
+# Upstream's binary manager only accepts its pinned ffmpeg 5.1 series.
+# Validate our system tools, then use upstream's external-binaries mode so
+# newer distro versions are used without downloading replacements.
+configure_media_tool() {
+    local tool="$1" env_name="$2" tool_path version major minor
+    tool_path="${!env_name:-}"
+    if [ -n "$tool_path" ]; then
+        # Explicit user-provided paths are trusted, as with FFMPEG_PATH before.
+        if [ ! -x "$tool_path" ]; then
+            echo "error: ${env_name} is not executable: ${tool_path}" >&2
             exit 1
         fi
     else
-        echo "warning: could not parse ffmpeg version ('${ffver}'); assuming it is recent enough." >&2
+        if ! tool_path="$(command -v "$tool")"; then
+            echo "error: ${tool} not found on PATH. Install ffmpeg before running audiobookshelf." >&2
+            exit 1
+        fi
+        version="$("$tool_path" -version 2> /dev/null | awk 'NR == 1 { print $3 }')"
+        version="${version#[nN]}"
+        if [[ ! "$version" =~ ^([0-9]+)\.([0-9]+) ]]; then
+            echo "error: cannot parse ${tool} version '${version}'; set ${env_name} explicitly to trust this build." >&2
+            exit 1
+        fi
+        major="${BASH_REMATCH[1]}"
+        minor="${BASH_REMATCH[2]}"
+        if ((major < FFMPEG_MIN_MAJOR || (major == FFMPEG_MIN_MAJOR && minor < FFMPEG_MIN_MINOR))); then
+            echo "error: ${tool} ${major}.${minor} is too old; audiobookshelf needs >= ${FFMPEG_MIN_MAJOR}.${FFMPEG_MIN_MINOR}." >&2
+            exit 1
+        fi
     fi
-fi
+    export "${env_name}=${tool_path}"
+}
+configure_media_tool ffmpeg FFMPEG_PATH
+configure_media_tool ffprobe FFPROBE_PATH
+export SKIP_BINARIES_CHECK="${SKIP_BINARIES_CHECK:-1}"
 
 exec "${HERE}/audiobookshelf" "$@"
