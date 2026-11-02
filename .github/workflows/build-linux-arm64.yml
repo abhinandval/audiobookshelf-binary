@@ -79,7 +79,7 @@ jobs:
           bash scripts/smoke-bundle.sh "$dir"
 
       - name: Set up node tooling
-        uses: jdx/mise-action@v5.2.2
+        uses: jdx/mise-action@v5.2.4
 
       - name: Install E2E deps
         run: |
